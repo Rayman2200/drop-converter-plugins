@@ -7,24 +7,24 @@ import java.awt.datatransfer.DataFlavor;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.OutputStream;
-import java.util.Arrays;
 import java.util.List;
 
 import javax.swing.TransferHandler.TransferSupport;
 
-import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.binary.Base64InputStream;
 import org.apache.commons.io.IOUtils;
 
 import de.drop_converter.plugin.annotations.ConverterPluginDetails;
 import de.drop_converter.plugin.exception.ConverterException;
 
 /**
- * Convert hex to data.
+ * Convert base64 to data.
  * 
  * @author Thomas Chojecki
  */
-@ConverterPluginDetails(authorEmail = "info@rayman2200.de", authorName = "Thomas Chojecki", pluginDescription = "Convert hex to data", pluginName = "Hex2Data", pluginVersion = "1.0.0")
-public class Hex2Data extends AbstractDataPlugin
+@ConverterPluginDetails(authorEmail = "info@rayman2200.de", authorName = "Thomas Chojecki", pluginDescription = "Convert base64 to data", pluginName = "Base642Data", pluginVersion = "1.0.0")
+public class Base642Data extends AbstractDataPlugin
 {
 
   @Override
@@ -35,24 +35,18 @@ public class Hex2Data extends AbstractDataPlugin
         List<File> files = (List<File>) support.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
         for (File file : files) {
           FileInputStream fis = null;
+          Base64InputStream base64IS = null;
           OutputStream out = null;
           try {
-            out = getOutputStream(file, ".hex");
             fis = new FileInputStream(file);
-            byte[] buffer = new byte[bufferSize];
-            int count = 0;
-            while (-1 != (count = fis.read(buffer))) {
-              if (count == bufferSize) {
-                out.write(Hex.decodeHex(new String(buffer).toCharArray()));
-              } else {
-                byte[] tmp = Arrays.copyOf(Hex.decodeHex(new String(buffer).toCharArray()), count);
-                out.write(tmp);
-              }
-            }
+            base64IS = new Base64InputStream(fis, false);
+            out = getOutputStream(file, ".bin");
+            IOUtils.copy(base64IS, out);
           } catch (Exception e) {
             throw new ConverterException(e);
           } finally {
             IOUtils.closeQuietly(out);
+            IOUtils.closeQuietly(base64IS);
             IOUtils.closeQuietly(fis);
           }
         }
@@ -61,8 +55,8 @@ public class Hex2Data extends AbstractDataPlugin
         String data = (String) support.getTransferable().getTransferData(DataFlavor.stringFlavor);
         OutputStream out = null;
         try {
-          byte[] encode = Hex.decodeHex(data.toCharArray());
-          out = getOutputStream(null, ".hex");
+          byte[] encode = new Base64().decode(data.getBytes());
+          out = getOutputStream(null, ".bin");
           out.write(encode);
         } catch (Exception e) {
           throw new ConverterException(e);

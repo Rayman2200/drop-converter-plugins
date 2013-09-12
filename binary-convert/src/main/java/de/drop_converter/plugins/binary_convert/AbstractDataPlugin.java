@@ -23,6 +23,8 @@ import de.drop_converter.plugin.exception.ConverterException;
 public abstract class AbstractDataPlugin extends ConverterPluginAdapter
 {
 
+  protected final static int bufferSize = 1024;
+
   @Override
   public boolean canImport(TransferSupport support)
   {
@@ -38,7 +40,7 @@ public abstract class AbstractDataPlugin extends ConverterPluginAdapter
    *          result.
    * @return the ouputfile
    */
-  public File getOutputFile(File original)
+  public File getOutputFile(File original, String extension)
   {
     String filename;
     if (original == null) {
@@ -47,11 +49,15 @@ public abstract class AbstractDataPlugin extends ConverterPluginAdapter
       filename = original.getName();
     }
 
+    if (extension == null || extension.isEmpty()) {
+      extension = ".hex";
+    }
+
     int lastIndex = filename.lastIndexOf(".");
     if (lastIndex == -1) {
       lastIndex = filename.length();
     }
-    filename = filename.substring(0, lastIndex).concat(".hex");
+    filename = filename.substring(0, lastIndex).concat(extension);
 
     File dir;
     if (original == null) {
@@ -72,10 +78,10 @@ public abstract class AbstractDataPlugin extends ConverterPluginAdapter
    * @throws ConverterException
    * @see {@link #getOutputFile(File)}
    */
-  public OutputStream getOutputStream(File original) throws ConverterException
+  public OutputStream getOutputStream(File original, String extension) throws ConverterException
   {
     try {
-      return new FileOutputStream(getOutputFile(original));
+      return new FileOutputStream(getOutputFile(original, extension));
     } catch (FileNotFoundException e) {
       throw new ConverterException(e);
     }
